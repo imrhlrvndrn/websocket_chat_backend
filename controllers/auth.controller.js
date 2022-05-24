@@ -62,7 +62,8 @@ module.exports = {
         console.log('User login initiated ... ');
         const { email, password } = req.body;
 
-        if (!email || !password) return next(badRequest(`All fields are required`));
+        if (!email || !password)
+            return next(badRequest(`email & password are required for authentication`));
 
         try {
             const user = await userModel.findOne({ email });
@@ -93,7 +94,7 @@ module.exports = {
             ]);
 
             successResponse(res, {
-                data: { user: userDto(user) },
+                data: { user: userDto(user), tokens: { accessToken, refreshToken } },
             });
             return;
         } catch (error) {

@@ -1,7 +1,9 @@
 const chatModel = require('../models/chat.model');
 const userModel = require('../models/user.model');
 const { successResponse } = require('../utils/error.utils');
-const { badRequest, notFound } = require('../services/CustomError.service');
+const { badRequest, notFound, serverError } = require('../services/CustomError.service');
+const { uploadFileToCloudinary } = require('../services/cloudinary.service');
+const { omitProperty } = require('../utils/object.utils');
 
 const createDMChatOrGroupChat = async (req, res, next) => {
     const { action_type } = req.body;
@@ -76,26 +78,39 @@ const createChat = async (req, res, next) => {
 const createGroupChat = async (req, res, next) => {
     let { name, users } = req.body;
     if (!name || !users) return next(badRequest(`Please provide a valid group name and add users`));
-    users = [...users, req.user._id];
+    console.log('users => ', { users, type: typeof users });
+    users =
+        users.filter((user) => user === req.user._id).length === 0
+            ? [...users, req.user._id]
+            : users;
 
     if (users.length < 2) return next(badRequest(`More than 2 users are required to form a group`));
 
     try {
-        const chatData = {
+        const uploadedFile = await uploadFileToCloudinary(req, next);
+        if (!uploadedFile) return next(serverError(`Couldn't upload your group icon`));
+
+        const chatData = new chatModel({
             name: name,
             is_group_chat: true,
             users,
             group_admins: [req.user._id],
-        };
+            avatar: uploadedFile.secure_url,
+        });
 
-        const newChat = await chatModel.create(chatData);
+        const newChat = await chatData.save();
+        // const newChat = await chatModel.create(chatData);
 
         const fetchedNewChat = await chatModel
             .findOne({ _id: newChat.id })
             .populate('users', '-password -__v')
             .populate('group_admins', '-password -__v');
 
-        return successResponse(res, { data: { chat: fetchedNewChat } });
+        return successResponse(res, {
+            data: {
+                chat: fetchedNewChat,
+            },
+        });
     } catch (error) {
         console.error(error);
         return next(badRequest(`Something went wrong => ${error.message}`));
