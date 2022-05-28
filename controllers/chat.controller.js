@@ -3,7 +3,6 @@ const userModel = require('../models/user.model');
 const { successResponse } = require('../utils/error.utils');
 const { badRequest, notFound, serverError } = require('../services/CustomError.service');
 const { uploadFileToCloudinary } = require('../services/cloudinary.service');
-const { omitProperty } = require('../utils/object.utils');
 
 const createDMChatOrGroupChat = async (req, res, next) => {
     const { action_type } = req.body;
@@ -78,7 +77,6 @@ const createChat = async (req, res, next) => {
 const createGroupChat = async (req, res, next) => {
     let { name, users } = req.body;
     if (!name || !users) return next(badRequest(`Please provide a valid group name and add users`));
-    console.log('users => ', { users, type: typeof users });
     users =
         users.filter((user) => user === req.user._id).length === 0
             ? [...users, req.user._id]
@@ -99,7 +97,6 @@ const createGroupChat = async (req, res, next) => {
         });
 
         const newChat = await chatData.save();
-        // const newChat = await chatModel.create(chatData);
 
         const fetchedNewChat = await chatModel
             .findOne({ _id: newChat.id })
