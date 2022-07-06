@@ -3,6 +3,7 @@ const userModel = require('../models/user.model');
 const { successResponse } = require('../utils/error.utils');
 const { badRequest, notFound, serverError } = require('../services/CustomError.service');
 const { uploadFileToCloudinary } = require('../services/cloudinary.service');
+const { generateInviteTokens } = require('../services/Token.service');
 
 const createDMChatOrGroupChat = async (req, res, next) => {
     const { action_type } = req.body;
@@ -69,9 +70,6 @@ const createChat = async (req, res, next) => {
         console.error(error);
         return next(badRequest(`Something went wrong => ${error.message}`));
     }
-    const chat = new chatModel({});
-    await chat.save();
-    return chat;
 };
 
 const createGroupChat = async (req, res, next) => {
@@ -92,7 +90,6 @@ const createGroupChat = async (req, res, next) => {
             name: name,
             is_group_chat: true,
             users,
-            group_admins: [req.user._id],
             avatar: uploadedFile.secure_url,
         });
 
@@ -100,8 +97,7 @@ const createGroupChat = async (req, res, next) => {
 
         const fetchedNewChat = await chatModel
             .findOne({ _id: newChat.id })
-            .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v');
+            .populate('users', '-password -__v');
 
         return successResponse(res, {
             data: {
@@ -119,7 +115,6 @@ const getAllChats = async (req, res, next) => {
         const chats = await chatModel
             .find({ users: { $in: [req.user._id] } })
             .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v')
             .populate({ path: 'latest_message', select: 'full_name email avatar' })
             .sort({ updatedAt: -1 });
         if (!chats) return next(badRequest(`No chats found`));
@@ -132,14 +127,11 @@ const getAllChats = async (req, res, next) => {
 };
 
 const getChat = async (req, res, next) => {
-    const { chatId } = req.params;
-    if (!chatId) return next(badRequest(`Please provide a group ID`));
+    const { chat_id } = req.params;
+    if (!chat_id) return next(badRequest(`Please provide a group ID`));
 
     try {
-        const chat = await chatModel
-            .findOne({ _id: chatId })
-            .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v');
+        const chat = await chatModel.findOne({ _id: chat_id }).populate('users', '-password -__v');
         if (!chat) return next(notFound(`Sorry, we couldn't find the chat!`));
 
         console.log('Chat info => ', chat);
@@ -152,8 +144,8 @@ const getChat = async (req, res, next) => {
 };
 
 const addUserToGroupChat = async (req, res, next) => {
-    const { chatId } = req.params;
-    if (!chatId) return next(badRequest(`Please provide a chat id`));
+    const { chat_id } = req.params;
+    if (!chat_id) return next(badRequest(`Please provide a chat id`));
     const { new_members } = req.body;
     if (!new_members) return next(badRequest(`Please provide a user id`));
     if (!new_members instanceof Array)
@@ -161,9 +153,8 @@ const addUserToGroupChat = async (req, res, next) => {
 
     try {
         const returnedGroupChat = await chatModel
-            .findOne({ _id: chatId })
-            .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v');
+            .findOne({ _id: chat_id })
+            .populate('users', '-password -__v');
         if (!returnedGroupChat)
             return next(notFound(`The chat you're trying to update doesn't exist`));
 
@@ -185,21 +176,33 @@ const addUserToGroupChat = async (req, res, next) => {
 };
 
 const removeUserFromGroupChat = async (req, res, next) => {
-    const { chatId } = req.params;
-    if (!chatId)
+    const { chat_id } = req.params;
+    if (!chat_id)
         return next(badRequest(`The group you're trying to remove a user from doesn't exist`));
-    const { user_id } = req.body;
+    const { remove_members } = req.body;
     if (!remove_members) return next(badRequest(`Please provide a valid user`));
+    if (!remove_members instanceof Array)
+        return next(badRequest(`Please provide users in correct format`));
 
     try {
-        const updatedGroupChat = await chatModel
-            .findOne({ _id: chatId }, { $pull: { users: user_id } }, { new: true })
-            .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v');
-        if (!updatedGroupChat)
+        const returnedGroupChat = await chatModel
+            .findOne({ _id: chat_id })
+            .populate('users', '-password -__v');
+        if (!returnedGroupChat)
             return next(notFound(`The chat you're trying to update doesn't exist`));
 
+        const transformedGroupChat = returnedGroupChat.users.map((user) => user.id);
+        const usersWhoCanBeRemoved = remove_members.filter((user_id) =>
+            transformedGroupChat.includes(user_id)
+        );
+        returnedGroupChat.users = transformedGroupChat.filter(
+            (user) => !usersWhoCanBeRemoved.includes(user)
+        );
+
+        const updatedGroupChat = await returnedGroupChat.save();
+
         return successResponse(res, { data: { chat: updatedGroupChat } });
+        return successResponse(res, { data: { chat: null } });
     } catch (error) {
         console.error(error);
         return next(badRequest(`Something went wrong => ${error.message}`));
@@ -207,19 +210,18 @@ const removeUserFromGroupChat = async (req, res, next) => {
 };
 
 const renameGroup = async (req, res, next) => {
-    const { chatId } = req.params;
+    const { chat_id } = req.params;
     const { new_name } = req.body;
     if (!new_name) return next(badRequest(`Please provide a valid new name for the group`));
 
     try {
         const updatedGroupChat = await chatModel
             .findOneAndUpdate(
-                { _id: chatId, is_group_chat: true },
+                { _id: chat_id, is_group_chat: true },
                 { name: new_name },
                 { new: true }
             )
-            .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v');
+            .populate('users', '-password -__v');
         if (!updatedGroupChat) return next(notFound(`No group chat found`));
 
         // ! console
@@ -232,12 +234,70 @@ const renameGroup = async (req, res, next) => {
     }
 };
 
+const createGroupInvite = async (req, res, next) => {
+    const { chat_id } = req.params;
+    let { invite_options } = req.body;
+    if (!invite_options) invite_options = { expiresIn: '1h' };
+    try {
+        const { inviteToken } = await generateInviteTokens({ chat_id: chat_id }, invite_options);
+        await chatModel.findOneAndUpdate(
+            { _id: chat_id },
+            {
+                $push: {
+                    invites: {
+                        created_by: req.user._id,
+                        token: inviteToken,
+                    },
+                },
+            },
+            { new: true }
+        );
+
+        return successResponse(res, { code: 201, data: { invite_token: inviteToken } });
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const deleteGroupInvite = async (req, res, next) => {
+    const { invite_id } = req.body;
+    const { chat_id } = req.params;
+    try {
+        const returnedChat = await chatModel.findOne({ _id: chat_id });
+        if (!returnedChat) return notFound(`The invite you're trying to delete doesn't exist`);
+
+        const inviteToBeDeleted = returnedChat.invites.filter((invite) => invite.id === invite_id);
+        if (inviteToBeDeleted.length <= 0)
+            return notFound(`The invite you're trying to delete doesn't exist`);
+
+        returnedChat.invites = returnedChat.invites.filter((invite) => invite.id !== invite_id);
+        await returnedChat.save();
+
+        return successResponse(res, { data: { invite: inviteToBeDeleted } });
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const getAllInvites = async (req, res, next) => {
+    const { chat_id } = req.params;
+    try {
+        const returnedChat = await chatModel
+            .findOne({ _id: chat_id })
+            .populate({ path: 'invites.created_by', select: '-__v -password' });
+
+        return successResponse(res, { data: { invites: returnedChat.invites } });
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+// ! Remove the modifyAdmins method & action since we're not adding additional admins to groups
 const modifyAdmins = async (req, res, next) => {
     try {
         const updatedGroupChat = await chatModel
-            .findOneAndUpdate({ _id: chatId }, { group_admins: admins }, { new: true })
-            .populate('users', '-password -__v')
-            .populate('group_admins', '-password -__v');
+            .findOneAndUpdate({ _id: chat_id }, { group_admins: admins }, { new: true })
+            .populate('users', '-password -__v');
 
         // ! console
         console.log('Modified group chat admins => ', updatedGroupChat);
@@ -250,11 +310,11 @@ const modifyAdmins = async (req, res, next) => {
 };
 
 const deleteGroupChat = async (req, res, next) => {
-    const { chatId } = req.params;
-    if (!chatId) return next(badRequest(`The group you're trying to delete doesn't exist`));
+    const { chat_id } = req.params;
+    if (!chat_id) return next(badRequest(`The group you're trying to delete doesn't exist`));
 
     try {
-        const chat = await chatModel.findOneAndDelete({ _id: chatId });
+        const chat = await chatModel.findOneAndDelete({ _id: chat_id });
         if (!chat) return next(notFound(`The chat you're trying to delete doesn't exist`));
 
         return successResponse(res, { data: { chat } });
@@ -265,8 +325,8 @@ const deleteGroupChat = async (req, res, next) => {
 };
 
 const updateGroupChat = async (req, res, next) => {
-    const { chatId, action_type } = req.params;
-    if (!chatId) return next(badRequest(`Please provide a chat ID`));
+    const { chat_id, action_type } = req.params;
+    if (!chat_id) return next(badRequest(`Please provide a chat ID`));
 
     if (!action_type) return next(badRequest(`Please provide an action type`));
 
@@ -275,6 +335,15 @@ const updateGroupChat = async (req, res, next) => {
             return await renameGroup(req, res, next);
         }
 
+        case 'new-invite': {
+            return await createGroupInvite(req, res, next);
+        }
+
+        case 'delete-invite': {
+            return await deleteGroupInvite(req, res, next);
+        }
+
+        // ! Remove the below action
         case 'admins': {
             return await modifyAdmins(req, res, next);
         }
@@ -299,6 +368,7 @@ const updateGroupChat = async (req, res, next) => {
 
 module.exports = {
     getAllChats,
+    getAllInvites,
     createDMChatOrGroupChat,
     getChat,
     updateGroupChat,

@@ -12,6 +12,12 @@ const Token = {
         return { accessToken, refreshToken };
     },
 
+    generateInviteTokens: (payload = { chat_id: '' }, options = { expiresIn: '1h' }) => {
+        const inviteToken = jwt.sign(payload, accessTokenSecret, { expiresIn: options.expiresIn });
+
+        return { inviteToken };
+    },  
+
     storeRefreshToken: async (token, userId) => {
         let returnedRefreshToken = await refreshTokenModel.findOne({ user: userId });
         if (!returnedRefreshToken) return await refreshTokenModel.create({ user: userId, token });
