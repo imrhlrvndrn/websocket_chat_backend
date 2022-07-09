@@ -134,8 +134,6 @@ const getChat = async (req, res, next) => {
         const chat = await chatModel.findOne({ _id: chat_id }).populate('users', '-password -__v');
         if (!chat) return next(notFound(`Sorry, we couldn't find the chat!`));
 
-        console.log('Chat info => ', chat);
-
         return successResponse(res, { data: { chat } });
     } catch (error) {
         console.error(error);

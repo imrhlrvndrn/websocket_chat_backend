@@ -1,6 +1,8 @@
 require('dotenv').config();
 const cors = require('cors');
+const http = require('http');
 const express = require('express');
+const socketio = require('socket.io');
 const cookieParser = require('cookie-parser');
 
 // Config
@@ -19,6 +21,14 @@ const { chatRoutes } = require('./routes/chat.route');
 const { messageRoutes } = require('./routes/message.route');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketio(server, {
+    pingTimeout: 60000,
+    cors: {
+        credentials: true,
+        origin: 'http://localhost:3000',
+    },
+});
 const port = process.env.PORT || 4000;
 
 connectDb();
@@ -31,7 +41,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/messages', messageRoutes);
+app.use('/api/message', messageRoutes);
 
 app.get('/', (req, res) => {
     console.log('Request =>', req);
@@ -41,4 +51,18 @@ app.get('/', (req, res) => {
 
 app.use(errorMiddleware);
 
-app.listen(port, () => console.log(`Server is running  port ${port}`));
+server.listen(port, () => console.log(`Server is running  port ${port}`));
+
+io.on('connection', (socket) => {
+    console.log('connected to socket.io');
+
+    socket.on('user initialization', (user_data) => {
+        socket.join(user_data._id);
+        socket.emit('user initialized');
+    });
+
+    socket.on('join chat', (room) => {
+        socket.join(room);
+        console.log(`User joined a chat ${room}`);
+    });
+});
