@@ -26,7 +26,7 @@ const io = socketio(server, {
     pingTimeout: 60000,
     cors: {
         credentials: true,
-        origin: 'http://localhost:3000',
+        origin: process.env.FRONTEND_URL,
     },
 });
 const port = process.env.PORT || 4000;
@@ -38,7 +38,7 @@ configureCloudinary();
 app.use(
     cors({
         credentials: true,
-        origin: 'https://websocket-chat-backend.onrender.com',
+        origin: process.env.BACKEND_URL,
     })
 );
 app.use(express.json());
