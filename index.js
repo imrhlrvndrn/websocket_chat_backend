@@ -33,9 +33,19 @@ const port = process.env.PORT || 4000;
 
 connectDb();
 configureCloudinary();
+var whitelist = ['http://localhost:3000', 'https://websocket-chat-backend.onrender.com'];
+var corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+};
 
 // Express Middlewares
-app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+app.use(cors({ credentials: true, ...corsOptions }));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/api/auth', authRoutes);
