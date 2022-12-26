@@ -42,7 +42,7 @@ app.set('Access-Control-Allow-Credentials', true);
 app.use(
     cors({
         credentials: true,
-        origin: process.env.BACKEND_URL,
+        origin: [process.env.BACKEND_URL, /\.onrender\.com$/],
     })
 );
 app.use(express.json());
