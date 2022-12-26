@@ -56,13 +56,21 @@ server.listen(port, () => console.log(`Server is running  port ${port}`));
 io.on('connection', (socket) => {
     console.log('connected to socket.io');
 
-    socket.on('user initialization', (user_data) => {
-        socket.join(user_data._id);
-        socket.emit('user initialized');
-    });
+    // socket.on('user initialization', (user_data) => {
+    //     console.log('user initialization is in progress');
+    //     socket.join(user_data._id);
+    //     socket.emit('user initialized');
+    //     console.log('user initialization is in progress 2');
+    // });
 
     socket.on('join chat', (room) => {
+        console.log('Room ID [join chat] => ', room);
         socket.join(room);
         console.log(`User joined a chat ${room}`);
+    });
+
+    socket.on('new message', (new_message) => {
+        console.log('got a new message from client => ', new_message);
+        socket.to(new_message.chat._id.toString()).emit('receive message', new_message);
     });
 });

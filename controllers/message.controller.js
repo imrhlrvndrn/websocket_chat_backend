@@ -18,10 +18,10 @@ const sendNewMessage = async (req, res, next) => {
         console.log('Saved new message => ', new_message);
 
         new_message = await new_message.populate({ path: 'chat' });
-        new_message = await new_message.populate({
-            path: 'chat.users',
-            select: 'full_name avatar',
-        });
+        // new_message = await new_message.populate({
+        //     path: 'chat.users',
+        //     select: 'full_name avatar',
+        // });
         new_message = await new_message.populate({ path: 'sender', select: 'full_name avatar' });
         console.log('Populated new message => ', new_message);
 
@@ -64,7 +64,7 @@ const getAllMessagesOfChat = async (req, res, next) => {
     const { chat_id } = req.params;
 
     try {
-        const chat_messages = await messageModel.find({ chat: chat_id });
+        const chat_messages = await messageModel.find({ chat: chat_id }).populate('sender');
 
         return successResponse(res, { data: { messages: chat_messages } });
     } catch (error) {

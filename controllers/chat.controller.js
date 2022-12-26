@@ -75,6 +75,8 @@ const createChat = async (req, res, next) => {
 const createGroupChat = async (req, res, next) => {
     let { name, users } = req.body;
     if (!name || !users) return next(badRequest(`Please provide a valid group name and add users`));
+
+    users = JSON.parse(users);
     users =
         users.filter((user) => user === req.user._id).length === 0
             ? [...users, req.user._id]
