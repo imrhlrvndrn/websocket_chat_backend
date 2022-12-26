@@ -35,6 +35,10 @@ connectDb();
 configureCloudinary();
 
 // Express Middlewares
+app.set('Access-Control-Allow-Credentials', true);
+app.set('Access-Control-Allow-Headers', 'Content-Type');
+app.set('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+app.set('Access-Control-Allow-Origin', process.env.BACKEND_URL);
 app.use(
     cors({
         credentials: true,
