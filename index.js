@@ -38,7 +38,7 @@ configureCloudinary();
 app.use(
     cors({
         credentials: true,
-        origin: ['https://websocket-chat-backend.onrender.com', 'http://localhost:3000'],
+        origin: 'https://websocket-chat-backend.onrender.com',
     })
 );
 app.use(express.json());
