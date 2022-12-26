@@ -3,7 +3,7 @@ const userModel = require('../models/user.model');
 const { successResponse } = require('../utils/error.utils');
 const { badRequest, notFound, serverError } = require('../services/CustomError.service');
 const { uploadFileToCloudinary } = require('../services/cloudinary.service');
-const { generateInviteTokens } = require('../services/Token.service');
+const { generateInviteTokens } = require('../services/token.service');
 
 const createDMChatOrGroupChat = async (req, res, next) => {
     const { action_type } = req.body;

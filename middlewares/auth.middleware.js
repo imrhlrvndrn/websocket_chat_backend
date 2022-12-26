@@ -1,4 +1,4 @@
-const { verifyAccessToken } = require('../services/Token.service');
+const { verifyAccessToken } = require('../services/token.service');
 const { unAuthorized } = require('../services/CustomError.service');
 
 module.exports = {

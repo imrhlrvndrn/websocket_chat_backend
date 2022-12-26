@@ -18,7 +18,7 @@ const {
     findRefreshToken,
     updateRefreshToken,
     removeRefreshToken,
-} = require('../services/Token.service');
+} = require('../services/token.service');
 const Cookie = require('../services/cookie.service');
 const { uploadFileToCloudinary } = require('../services/cloudinary.service');
 const { successResponse } = require('../utils/error.utils');
