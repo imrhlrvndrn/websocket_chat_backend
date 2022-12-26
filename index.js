@@ -42,7 +42,7 @@ configureCloudinary();
 app.use(
     cors({
         credentials: true,
-        origin: [process.env.BACKEND_URL, /\.onrender\.com$/],
+        origin: process.env.FRONTEND_URL,
     })
 );
 app.use(express.json());
