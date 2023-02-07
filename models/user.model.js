@@ -9,11 +9,10 @@ const userSchema = new Schema(
         avatar: {
             type: String,
             required: true,
-            // default:
-            //     'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
+            default:
+                'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
         },
-        // groupids: [{ type: Schema.Types.ObjectId, ref: 'Group' }],
-        // privatedmids: [{ type: Schema.Types.ObjectId, ref: 'Group' }],
+        blocked: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     },
     { timestamps: true }
 );
@@ -24,8 +23,6 @@ userSchema.methods.validatePassword = async function (password = '') {
 };
 
 userSchema.pre('save', async function (next) {
-    console.log('pre save', this);
-    console.log('Hashing service => ', Hash);
     // ! Check if password is hashed again whenever we use .save() in other controllers
     // if (!this.isModified) {
     //     return next();

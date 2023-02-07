@@ -6,17 +6,17 @@ const accessTokenSecret = process.env.JWT_ACCESS_TOKEN_SECRET,
 
 const Token = {
     generateTokens: (payload = { email: '' }) => {
-        const accessToken = jwt.sign(payload, accessTokenSecret, { expiresIn: '1h' });
+        const accessToken = jwt.sign(payload, accessTokenSecret, { expiresIn: '1d' });
         const refreshToken = jwt.sign(payload, refreshTokenSecret, { expiresIn: '1y' });
 
         return { accessToken, refreshToken };
     },
 
-    generateInviteTokens: (payload = { chat_id: '' }, options = { expiresIn: '1h' }) => {
+    generateInviteTokens: (payload = { chat_id: '' }, options = { expiresIn: '1d' }) => {
         const inviteToken = jwt.sign(payload, accessTokenSecret, { expiresIn: options.expiresIn });
 
         return { inviteToken };
-    },  
+    },
 
     storeRefreshToken: async (token, userId) => {
         let returnedRefreshToken = await refreshTokenModel.findOne({ user: userId });

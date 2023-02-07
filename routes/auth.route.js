@@ -30,7 +30,7 @@ router.post('/login', loginUser);
 router.get('/refresh', refresh);
 // // * Temp for now, implement in-depth later
 // router.post('/reset-p', resetPassword);
-// router.post('/logout', authMiddleware, logoutUser);
+router.post('/logout', logoutUser);
 // // !Temp route
 // router.post('/create', addUser);
 // router.get('/refreshtoken', getRefreshToken);

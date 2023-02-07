@@ -19,17 +19,6 @@ const chatSchema = new Schema(
                 // Use JWT for expiration & chat information logic
             },
         ],
-        // group_admins: [
-        //     {
-        //         user: { type: Schema.Types.ObjectId, ref: 'User' },
-        //         permissions: [
-        //             {
-        //                 type: String,
-        //                 enum: ['ADD_OR_REMOVE_USERS', 'DELETE_MESSAGES', 'ADMINISTRATOR'],
-        //             },
-        //         ],
-        //     },
-        // ],
     },
     { timestamps: true }
 );

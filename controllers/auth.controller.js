@@ -1,9 +1,5 @@
 const userDto = require('../dtos/user.dto');
 const userModel = require('../models/user.model');
-// const {
-//     Otp: { generateOtp },
-//     Email: { sendEmail },
-// } = require('../services');
 const { Hash } = require('../services/hash.service');
 const {
     badRequest,
@@ -35,7 +31,6 @@ const secureCookieOptions = {
 module.exports = {
     registerAccount: async (req, res, next) => {
         const { full_name, email, password } = req.body;
-        console.log('File => ', req.file);
 
         if (!full_name || !email || !password) return next(badRequest(`All fields are required`));
 
@@ -77,18 +72,12 @@ module.exports = {
                 email: user.email,
             });
 
-            // ! See if you want to save the result in a variable and use it in the next step
-            await storeRefreshToken(refreshToken, user._id);
+            // await storeRefreshToken(refreshToken, user._id);
 
             Cookie.set(res, [
                 {
                     name: 'X_CHATAPP_ACCESSTOKEN',
                     value: accessToken,
-                    options: secureCookieOptions,
-                },
-                {
-                    name: 'X_CHATAPP_REFRESHTOKEN',
-                    value: refreshToken,
                     options: secureCookieOptions,
                 },
             ]);
@@ -257,16 +246,16 @@ module.exports = {
         }
     },
     logoutUser: async (req, res, next) => {
-        const { user } = req;
-        const { refreshToken } = req.cookies;
-        if (!user || !refreshToken) next(badRequest());
+        // const { user } = req;
+        // const { X_CHATAPP_REFRESHTOKEN: refreshToken } = req.cookies;
+        // if (!refreshToken) next(badRequest());
 
-        try {
-            if (refreshToken) await removeRefreshToken(user._id, refreshToken);
-        } catch (error) {
-            console.error(error);
-            return next(error);
-        }
+        // try {
+        //     if (refreshToken) await removeRefreshToken(user._id, refreshToken);
+        // } catch (error) {
+        //     console.error(error);
+        //     return next(error);
+        // }
 
         Cookie.delete(res, [
             'X_CHATAPP_REFRESHTOKEN',
