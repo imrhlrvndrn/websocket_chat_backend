@@ -76,15 +76,18 @@ const getAllMessagesOfChat = async (req, res, next) => {
 const execMessageOperations = async (req, res, next) => {
     switch (req.params.action_type) {
         case 'new': {
-            return await sendNewMessage(req, res, next);
+            await sendNewMessage(req, res, next);
+            break;
         }
 
         case 'delete': {
-            return await deleteChatMessage(req, res, next);
+            await deleteChatMessage(req, res, next);
+            break;
         }
 
         default:
-            return next(badRequest(`Please provide a valid action type`));
+            next(badRequest(`Please provide a valid action type`));
+            break;
     }
 };
 

@@ -11,15 +11,18 @@ const createDMChatOrGroupChat = async (req, res, next) => {
 
     switch (action_type) {
         case 'CREATE_DM_CHAT': {
-            return await createChat(req, res, next);
+            await createChat(req, res, next);
+            break;
         }
 
         case 'CREATE_GROUP_CHAT': {
-            return await createGroupChat(req, res, next);
+            await createGroupChat(req, res, next);
+            break;
         }
 
         default: {
-            return next(badRequest(`Please provide a valid action type`));
+            next(badRequest(`Please provide a valid action type`));
+            break;
         }
     }
 };
@@ -316,31 +319,38 @@ const updateGroupChat = async (req, res, next) => {
 
     switch (action_type) {
         case 'rename': {
-            return await renameGroup(req, res, next);
+            await renameGroup(req, res, next);
+            break;
         }
 
         case 'new-invite': {
-            return await createGroupInvite(req, res, next);
+            await createGroupInvite(req, res, next);
+            break;
         }
 
         case 'delete-invite': {
-            return await deleteGroupInvite(req, res, next);
+            await deleteGroupInvite(req, res, next);
+            break;
         }
 
         case 'add-user': {
-            return await addUserToGroupChat(req, res, next);
+            await addUserToGroupChat(req, res, next);
+            break;
         }
 
         case 'remove-user': {
-            return await removeUserFromGroupChat(req, res, next);
+            await removeUserFromGroupChat(req, res, next);
+            break;
         }
 
         case 'delete': {
-            return await deleteGroupChat(req, res, next);
+            await deleteGroupChat(req, res, next);
+            break;
         }
 
         default: {
-            return next(badRequest(`Please provide a valid action type`));
+            next(badRequest(`Please provide a valid action type`));
+            break;
         }
     }
 };
