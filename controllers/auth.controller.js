@@ -82,10 +82,9 @@ module.exports = {
                 },
             ]);
 
-            successResponse(res, {
+            return successResponse(res, {
                 data: { user: userDto(user), tokens: { accessToken, refreshToken } },
             });
-            return;
         } catch (error) {
             console.error(error);
             return next(error);
